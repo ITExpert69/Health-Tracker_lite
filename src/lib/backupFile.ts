@@ -1,6 +1,10 @@
 import { isTauri } from "../db";
 
-/** Save a text file via the native dialog (Tauri) or a download (browser). Returns false if cancelled. */
+/**
+ * Save a text file. Desktop: native save dialog. iPad/iPhone: the share sheet
+ * ("Save to Files", iCloud Drive, AirDrop…). Other browsers: a download.
+ * Returns false if the user cancelled.
+ */
 export async function saveTextFile(defaultName: string, content: string): Promise<boolean> {
   if (isTauri()) {
     const { save } = await import("@tauri-apps/plugin-dialog");
@@ -10,10 +14,22 @@ export async function saveTextFile(defaultName: string, content: string): Promis
     await writeTextFile(path, content);
     return true;
   }
-  const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
+  const file = new File([content], defaultName, { type: "application/json" });
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: defaultName });
+      return true;
+    } catch (e) {
+      if ((e as DOMException).name === "AbortError") return false;
+      // NotAllowedError etc. (e.g. lost user activation): fall through to a download.
+    }
+  }
+  const url = URL.createObjectURL(file);
   const a = Object.assign(document.createElement("a"), { href: url, download: defaultName });
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
   return true;
 }
 

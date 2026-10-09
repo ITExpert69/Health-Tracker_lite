@@ -6,9 +6,11 @@ import type { Sport, UnitSystem } from "../lib/units";
 export interface Settings {
   units: UnitSystem;
   weightGoalKg: number | null;
+  /** ISO time of the last successful backup export. */
+  lastBackupAt: string | null;
 }
 
-const DEFAULT_SETTINGS: Settings = { units: "metric", weightGoalKg: null };
+const DEFAULT_SETTINGS: Settings = { units: "metric", weightGoalKg: null, lastBackupAt: null };
 
 export async function getSettings(db: Db): Promise<Settings> {
   const rows = await db.select<{ key: string; value: string }>(`SELECT key, value FROM setting`);

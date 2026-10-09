@@ -93,7 +93,9 @@ export function Field({ label, children, className = "" }: { label: string; chil
 }
 
 export function Input(p: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...p} className={`${fieldCls} ${width(p.className)} ${p.className ?? ""}`} />;
+  // inputMode gives touch devices a number keypad with a decimal point.
+  const inputMode = p.inputMode ?? (p.type === "number" ? "decimal" : undefined);
+  return <input {...p} inputMode={inputMode} className={`${fieldCls} ${width(p.className)} ${p.className ?? ""}`} />;
 }
 
 export function Select(p: SelectHTMLAttributes<HTMLSelectElement>) {

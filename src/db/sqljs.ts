@@ -4,6 +4,7 @@ import type { Db, ExecResult, SqlValue } from "./types";
 /** sql.js-backed Db. `persist` is called (debounced) after writes. */
 export class SqlJsDb implements Db {
   private timer: ReturnType<typeof setTimeout> | null = null;
+  private dirty = false;
 
   constructor(
     private readonly db: Database,
@@ -34,12 +35,15 @@ export class SqlJsDb implements Db {
   }
 
   async flush(): Promise<void> {
+    if (!this.dirty) return;
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
+    this.dirty = false;
     if (this.persist) await this.persist(this.db.export());
   }
 
   private schedulePersist() {
+    this.dirty = true;
     if (!this.persist) return;
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => void this.flush(), 300);

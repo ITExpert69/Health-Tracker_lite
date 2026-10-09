@@ -25,12 +25,27 @@ Other scripts:
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | UI only, in a browser at http://localhost:1420. Data goes to the browser's IndexedDB (via sql.js), which is handy for UI work |
+| `npm run dev` | Web version in a browser at http://localhost:1420 (data in IndexedDB via sql.js) |
+| `npm run build` | Web/PWA build into `dist/` (the Tauri build skips the service worker automatically) |
 | `npm test` | Unit tests for the data layer and stats (Vitest, real SQLite via sql.js) |
 | `npm run typecheck` | TypeScript check |
 
 To try the app with data: **Settings & data → Load demo data** (shown only while the database is empty).
 It adds 120 days of sample history. **Delete all data** removes it again.
+
+## iPad / web version
+
+The same app also runs as an installable web app (PWA). It works offline, and data is stored on the device in the browser (SQLite via sql.js, saved to IndexedDB).
+
+1. Host it. Push this repo to GitHub and turn on **Settings → Pages → Source: GitHub Actions**.
+   `.github/workflows/pages.yml` then tests, builds and publishes on every push to `main`.
+   (Any static host works too: `npm run build`, then upload `dist/`.)
+2. On the iPad, open the Pages URL in **Safari** → Share → **Add to Home Screen**. Launch it from the icon from then on.
+   This also lets Safari keep the app's storage instead of evicting it.
+3. Back up regularly: **Settings & data → Export backup** opens the share sheet, so you can save to Files or iCloud Drive.
+   The app nudges you when the last backup is more than 7 days old. **Restore** on another device moves all your data there.
+
+Data is **not** synced between devices or with the desktop app. Each install has its own database; backup and restore moves data between them.
 
 ## Where your data is
 

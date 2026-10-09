@@ -16,9 +16,9 @@ describe("migrations", () => {
 describe("settings", () => {
   it("defaults and saves", async () => {
     const db = await freshDb();
-    expect(await repo.getSettings(db)).toEqual({ units: "metric", weightGoalKg: null });
+    expect(await repo.getSettings(db)).toEqual({ units: "metric", weightGoalKg: null, lastBackupAt: null });
     await repo.saveSettings(db, { units: "imperial", weightGoalKg: 75 });
-    expect(await repo.getSettings(db)).toEqual({ units: "imperial", weightGoalKg: 75 });
+    expect(await repo.getSettings(db)).toMatchObject({ units: "imperial", weightGoalKg: 75 });
   });
 });
 

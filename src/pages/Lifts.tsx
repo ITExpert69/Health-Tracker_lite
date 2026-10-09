@@ -101,7 +101,7 @@ export default function Lifts() {
             ))}
           </Table>
         ) : (
-          <Empty>No workouts yet. Click “New workout” to log one.</Empty>
+          <Empty>No workouts yet. Use “New workout” to log one.</Empty>
         )}
       </Card>
     </>

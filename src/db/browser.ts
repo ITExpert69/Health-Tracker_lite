@@ -33,7 +33,26 @@ async function save(bytes: Uint8Array): Promise<void> {
   });
 }
 
+/**
+ * Asks the browser not to evict our storage under pressure. Safari grants this
+ * to home-screen apps; returns whether storage is persistent.
+ */
+export async function requestPersistence(): Promise<boolean> {
+  try {
+    if (await navigator.storage?.persisted?.()) return true;
+    return (await navigator.storage?.persist?.()) ?? false;
+  } catch {
+    return false;
+  }
+}
+
 export async function openBrowserDb(): Promise<SqlJsDb> {
   const SQL = await initSqlJs({ locateFile: () => wasmUrl });
-  return new SqlJsDb(openMemoryDb(SQL, await load()), save);
+  const db = new SqlJsDb(openMemoryDb(SQL, await load()), save);
+  // iOS may suspend or kill a backgrounded app at any time: write pending changes immediately.
+  const flushNow = () => void db.flush();
+  document.addEventListener("visibilitychange", () => document.visibilityState === "hidden" && flushNow());
+  window.addEventListener("pagehide", flushNow);
+  void requestPersistence();
+  return db;
 }

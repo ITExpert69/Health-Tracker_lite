@@ -57,3 +57,13 @@ describe("dates and units", () => {
     expect(displayToKg(kgToDisplay(80, "imperial"), "imperial")).toBeCloseTo(80);
   });
 });
+
+import { backupOverdue } from "../src/lib/backup";
+describe("backup reminder", () => {
+  it("is overdue when never backed up or older than 7 days", () => {
+    const now = Date.parse("2026-10-09T12:00:00Z");
+    expect(backupOverdue(null, now)).toBe(true);
+    expect(backupOverdue("2026-10-05T12:00:00Z", now)).toBe(false);
+    expect(backupOverdue("2026-10-01T12:00:00Z", now)).toBe(true);
+  });
+});

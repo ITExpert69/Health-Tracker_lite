@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useApp, useQuery } from "../AppContext";
-import { clearAllData, exportBackup, listTargets, restoreBackup, setTarget, type Backup } from "../db/repo";
+import { clearAllData, listTargets, restoreBackup, setTarget, type Backup } from "../db/repo";
 import { Button, Card, Field, Input, PageHeader, Select, Table, num } from "../components/ui";
 import { formatDate, localDate } from "../lib/dates";
 import { displayToKg, kgToDisplay, massUnit, type UnitSystem } from "../lib/units";
 import { macroKcal } from "../lib/stats";
-import { openTextFile, saveTextFile } from "../lib/backupFile";
+import { openTextFile } from "../lib/backupFile";
+import { backupNow } from "../lib/backup";
 import { isEmpty, loadDemoData } from "../lib/demo";
 import { isTauri } from "../db";
 
@@ -25,6 +26,7 @@ export default function SettingsPage() {
   });
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const persisted = useQuery(async () => (isTauri() ? true : (await import("../db/browser")).requestPersistence()));
 
   async function saveTarget() {
     const p = num(t.protein) ?? 0;
@@ -38,9 +40,10 @@ export default function SettingsPage() {
   }
 
   async function doExport() {
-    const b = await exportBackup(db);
-    const ok = await saveTextFile(`health-tracker-backup-${localDate()}.json`, JSON.stringify(b));
-    if (ok) setStatus("Backup exported.");
+    if (await backupNow(db)) {
+      await updateSettings({});
+      setStatus("Backup exported.");
+    }
   }
 
   async function doRestore() {
@@ -156,8 +159,14 @@ export default function SettingsPage() {
           <p className="mb-3 text-sm text-ink-2">
             {isTauri()
               ? "Your data lives in a single SQLite file (health.db) in the app-data folder. Export a JSON backup any time; it contains everything."
-              : "Running in browser dev mode: data is stored in this browser's IndexedDB. Use the desktop app for real data."}
+              : "Your data is stored in this browser on this device. It is not synced anywhere. Export a backup regularly and keep it in Files or iCloud Drive; restoring it on another device moves all your data there."}
           </p>
+          {!isTauri() && (
+            <p className="mb-3 text-xs text-muted">
+              Last backup: {settings.lastBackupAt ? formatDate(settings.lastBackupAt, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "never"}
+              {" · "}Storage: {persisted == null ? "checking…" : persisted ? "persistent (protected from automatic clean-up)" : "best-effort; add the app to your Home Screen to protect it"}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => void doExport()}>Export backup (JSON)</Button>
             <Button onClick={() => void doRestore()} disabled={busy}>
